@@ -1,0 +1,13 @@
+{
+  "name": "claude-master-plan",
+  "owner": {
+    "name": "lcguerrerocovo"
+  },
+  "plugins": [
+    {
+      "name": "master-plan",
+      "source": "./",
+      "description": "Multi-session vision tracking and execution for large goals"
+    }
+  ]
+}
