@@ -102,6 +102,8 @@ Do NOT push to continue when the vision is substantially met.
 
 ### Step 4: Execute
 
+**Do NOT invoke `superpowers:brainstorming` or `superpowers:writing-plans` during this step.** Master-plan owns its own planning process. Always use `EnterPlanMode` directly.
+
 1. Use `EnterPlanMode` to create the session plan with these sections:
    - **Scope:** what this session will accomplish
    - **Approach:** how the work will be done
