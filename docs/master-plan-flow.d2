@@ -61,7 +61,16 @@ phase2: "Phase 2: Session Loop" {
     style.fill: "#fff3cd"
   }
   propose: "3. Propose\nhighest-leverage step"
-  execute: "4. Execute & verify"
+  parallel: "Parallel?" {
+    shape: diamond
+    style.fill: "#fff3cd"
+  }
+  seq_exec: "4a. Execute &\nverify (sequential)"
+  par_exec: "4b. Dispatch\nworktree agents" {
+    style.fill: "#e0f0ff"
+  }
+  merge: "Merge & verify"
+
   post_exec: "5. Post-Execution" {
     style.fill: "#e8f0fd"
     label: |md
@@ -76,8 +85,12 @@ phase2: "Phase 2: Session Loop" {
 
   assess -> converge
   converge -> propose: "gap remains"
-  propose -> execute
-  execute -> post_exec
+  propose -> parallel
+  parallel -> seq_exec: "no"
+  parallel -> par_exec: "yes"
+  seq_exec -> post_exec
+  par_exec -> merge
+  merge -> post_exec
 }
 
 route -> phase2.assess: "yes"
@@ -105,7 +118,12 @@ session_plan: "Session Plan" {
   |
 }
 
-phase2.execute -> session_plan: "creates" {
+phase2.seq_exec -> session_plan: "creates" {
+  style.stroke: "#f9a825"
+  style.stroke-dash: 3
+}
+
+phase2.par_exec -> session_plan: "creates" {
   style.stroke: "#f9a825"
   style.stroke-dash: 3
 }

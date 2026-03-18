@@ -1,7 +1,7 @@
 {
   "name": "master-plan",
   "description": "Multi-session vision tracking and execution for large goals",
-  "version": "1.3.0",
+  "version": "1.4.1",
   "author": {
     "name": "Luis Guerrero",
     "email": "lcguerrerocovo@gmail.com"

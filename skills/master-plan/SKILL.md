@@ -107,7 +107,11 @@ Do NOT push to continue when the vision is substantially met.
    - Are implementation sessions building on structural assumptions that haven't been written down?
    - Have principles been describing constraints that the implementation is working around rather than satisfying?
    - If yes to either: propose a design session that produces a binding artifact in the master doc (a named section like "Target pipeline" or "Component architecture"). This artifact is checked in subsequent sessions the same way principles are. Updates require explicit user approval.
-5. Discuss and align with the user before executing
+5. **Check for parallel candidates** -- after forming the proposal, check whether it decomposes into independent sub-steps:
+   - **Independence test:** "Could two people do these without talking to each other?" -- no shared files, no ordering dependency, no shared state.
+   - If yes, present named tracks (e.g. "Track A: …", "Track B: …"), state which are independent, and offer: "These tracks are independent -- run in parallel or sequential?"
+   - **User chooses.** The skill never auto-parallelizes. If the user chooses sequential, or the step is inherently sequential, proceed with the normal Step 4 flow.
+6. Discuss and align with the user before executing
 
 ### Step 4: Execute
 
@@ -145,6 +149,11 @@ Do NOT push to continue when the vision is substantially met.
           plan path (actual file, never "inline"), commits, what was
           verified, consistency findings, review findings
         - Propose vision/principle updates if warranted (present for approval)
+        - For parallel sessions, use this bookkeeping format instead:
+          N. *YYYY-MM-DD -- topic* -- Summary. Plan: `path`.
+             - Track A: [summary]. Commits: `abc`. Verification: pass.
+             - Track B: [summary]. Commits: `def`. Verification: pass.
+          Verified: [combined]. Consistency: [findings]. Review: [findings].
 
      4. MASTER DOC COHERENCE (every 5 sessions) -- if this is session 5,
         10, 15, etc., dispatch a subagent to review the master doc for:
@@ -162,6 +171,36 @@ Do NOT push to continue when the vision is substantially met.
 2. Execute the work
 3. Verify against the criteria from the plan
 
+#### When user chooses parallel execution
+
+If the user chose parallel execution in Step 3, replace the normal execute flow above with this:
+
+1. **Enter plan mode once** with an orchestrator plan containing these sections:
+   - **Scope:** what this session will accomplish (same as normal)
+   - **Tracks:** one subsection per track -- each with scope, approach, and verification criteria
+   - **Merge sequence:** the order tracks merge in (plan order), conflict resolution policy, combined verification step
+   - **Post-execution checklist:** same as normal (copy verbatim from template above)
+
+2. **Dispatch all tracks as parallel Agent calls in a single message:**
+   ```
+   Agent(
+     description: "Track A: ...",
+     prompt: "<track section from orchestrator plan>\n\nMaster doc: <path>\n\nVerify your work against the track criteria. Commit passing work.",
+     isolation: "worktree",
+     model: "opus",
+     mode: "bypassPermissions"
+   )
+   ```
+   Agents do NOT get separate plan files -- they receive their track section from the orchestrator plan.
+
+3. **Collect results** from each agent: what was done, verification pass/fail, branch name, commits.
+
+4. **Merge sequence:**
+   - Passing tracks merge in plan order
+   - If a merge produces conflicts, present them to the user for resolution
+   - Failed tracks are reported but not merged
+   - After all passing tracks are merged, run combined verification on the merged result
+
 Session plans are lightweight. If a session's scope is genuinely complex, suggest using the writing-plans skill as an exception.
 
 ### Step 5: Post-Execution
@@ -170,7 +209,7 @@ Session plans are lightweight. If a session's scope is genuinely complex, sugges
 Do NOT skip this step. Do NOT suggest `/clear` or end the session before completing ALL items in the post-execution checklist from the session plan.
 </HARD-GATE>
 
-Follow the **Post-execution checklist** in your session plan. Every session gets a consistency check and code review — these are mandatory, not gated on user approval. Use subagents for all steps to keep the main context clean.
+Follow the **Post-execution checklist** in your session plan. Every session gets a consistency check and code review -- these are mandatory, not gated on user approval. Use subagents for all steps to keep the main context clean.
 
 ---
 
