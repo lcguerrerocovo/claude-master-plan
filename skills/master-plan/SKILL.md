@@ -133,8 +133,10 @@ Do NOT push to continue when the vision is substantially met.
         - Fix any issues found
         - Report: list what was checked and what was fixed (or "clean")
 
-     2. CODE REVIEW -- dispatch a subagent to:
-        - Review the session's diff (all commits from this session)
+     2. CODE REVIEW (every 5 sessions) -- if this is session 5, 10, 15,
+        etc., dispatch a subagent to:
+        - Review the accumulated diff since the last code review
+          (all commits from the last 5 sessions)
         - Check for correctness, safety, adherence to principles
         - Fix any issues found
         - Report: list findings and fixes (or "clean")
@@ -209,7 +211,7 @@ Session plans are lightweight. If a session's scope is genuinely complex, sugges
 Do NOT skip this step. Do NOT suggest `/clear` or end the session before completing ALL items in the post-execution checklist from the session plan.
 </HARD-GATE>
 
-Follow the **Post-execution checklist** in your session plan. Every session gets a consistency check and code review -- these are mandatory, not gated on user approval. Use subagents for all steps to keep the main context clean.
+Follow the **Post-execution checklist** in your session plan. Consistency checks run every session. Code review and master doc coherence run every 5 sessions. None are gated on user approval. Use subagents for all steps to keep the main context clean.
 
 ---
 
