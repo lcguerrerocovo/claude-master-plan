@@ -1,0 +1,124 @@
+direction: down
+
+# --- Entry ---
+
+start: "/master-plan" {
+  shape: oval
+  style.fill: "#e8f4fd"
+}
+
+has_path: "Path provided?" {
+  shape: diamond
+  style.fill: "#fff3cd"
+}
+
+start -> has_path
+
+# --- Phase 1 (setup) ---
+
+phase1: "Phase 1: Setup" {
+  style.fill: "#f0fdf0"
+
+  brainstorm: "Brainstorm\nvision & principles"
+  aligned: "Aligned?" { shape: diamond }
+  write: "Write master doc"
+
+  brainstorm -> aligned
+  aligned -> brainstorm: "refine"
+  aligned -> write: "yes"
+}
+
+has_path -> phase1.brainstorm: "no args"
+
+phase1.write -> master_doc: "creates"
+
+# --- Artifacts (central) ---
+
+master_doc: "Master Doc" {
+  shape: page
+  style.fill: "#fffde7"
+  style.stroke: "#f9a825"
+  style.font-size: 16
+
+  vision: "Vision & Principles"
+  state: "Starting State"
+  history: "Previous Sessions\n(date, commits, reviewed)"
+}
+
+session_plan: "Session Plan" {
+  shape: page
+  style.fill: "#fffde7"
+  style.stroke: "#f9a825"
+  style.font-size: 16
+
+  content: "Scope, Approach,\nVerification Criteria"
+  checklist: "Post-execution Checklist\n1. Cross-session review [subagent]\n2. Code review check (every 3)\n3. Bookkeeping [subagent]\n4. Handoff"
+}
+
+# --- Phase 2 (session loop) ---
+
+phase2: "Phase 2: Session Loop" {
+  style.fill: "#fdf0f0"
+
+  assess: "1. Assess\ngap to vision"
+  converge: "2. Converged?" {
+    shape: diamond
+    style.fill: "#fff3cd"
+  }
+  propose: "3. Propose\nhighest-leverage step"
+  execute: "4. Execute & verify"
+
+  post_exec: "5. Post-Execution\n(follow session plan checklist)" {
+    style.fill: "#e8f0fd"
+    cross_review: "Cross-session\nreview [subagent]"
+    code_review: "Code review?\n(every 3 sessions)" { shape: diamond; style.fill: "#fff3cd" }
+    bookkeep: "Bookkeeping\n[subagent]"
+    handoff: "Handoff"
+    cross_review -> code_review
+    code_review -> bookkeep
+    bookkeep -> handoff
+  }
+
+  assess -> converge
+  converge -> propose: "gap remains"
+  propose -> execute
+  execute -> post_exec
+}
+
+has_path -> phase2.assess: "path provided"
+
+# --- Reads/writes ---
+
+phase2.assess -> master_doc: "reads" {
+  style.stroke: "#f9a825"
+  style.stroke-dash: 3
+}
+
+phase2.execute -> session_plan: "creates" {
+  style.stroke: "#f9a825"
+  style.stroke-dash: 3
+}
+
+phase2.post_exec -> session_plan.checklist: "follows" {
+  style.stroke: "#f9a825"
+  style.stroke-dash: 3
+}
+
+phase2.post_exec.bookkeep -> master_doc.history: "updates" {
+  style.stroke: "#f9a825"
+}
+
+# --- Loop back ---
+
+phase2.post_exec.handoff -> phase2.assess: "next session:\n/clear + /master-plan <path>" {
+  style.stroke-dash: 3
+}
+
+# --- Convergence exit ---
+
+done: "Done\nFinal code review [subagent],\ndoc cleanup, squash" {
+  shape: oval
+  style.fill: "#d4edda"
+}
+
+phase2.converge -> done: "vision met"

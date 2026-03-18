@@ -34,6 +34,8 @@ claude plugin install master-plan@claude-master-plan
 
 ### Workflow
 
+![master-plan flow](docs/master-plan-flow.svg)
+
 1. **Setup**: `/master-plan` starts a brainstorming dialogue to define your vision and principles
 2. **Execute**: Each session reads the master doc, assesses the gap, proposes the highest-leverage next step, and executes
 3. **Converge**: When the vision is substantially met, the skill recommends stopping and guides final cleanup
