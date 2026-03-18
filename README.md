@@ -10,9 +10,11 @@ Master Plan gives Claude Code a structured workflow for goals that span multiple
 
 - **Vision-driven**: Starts with collaborative brainstorming to define what "done" looks like
 - **Fresh assessment each session**: No stale priority lists -- reassesses the gap every time
+- **Design compliance checks**: Detects when implementation drifts from principles or design specs, and proposes design sessions when structural assumptions are unwritten
 - **Convergence detection**: Proactively recommends stopping when the vision is substantially met
-- **Built-in code review cadence**: Triggers review prompts every 3 sessions
-- **Cross-session consistency checks**: Catches documentation drift and pattern inconsistencies
+- **Mandatory code review**: Every session's diff is reviewed automatically
+- **Mandatory consistency checks**: Catches documentation drift and pattern inconsistencies every session
+- **Master doc coherence reviews**: Every 5 sessions, condenses verbose history and flags contradictions
 - **Domain-agnostic**: Works for code, docs, prompts, processes -- anything
 
 ## Install

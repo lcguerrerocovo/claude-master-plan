@@ -7,12 +7,12 @@ start: "/master-plan" {
   style.fill: "#e8f4fd"
 }
 
-has_path: "Path provided?" {
+route: "Path provided?" {
   shape: diamond
   style.fill: "#fff3cd"
 }
 
-start -> has_path
+start -> route
 
 # --- Phase 1 (setup) ---
 
@@ -28,31 +28,26 @@ phase1: "Phase 1: Setup" {
   aligned -> write: "yes"
 }
 
-has_path -> phase1.brainstorm: "no args"
+route -> phase1.brainstorm: "no"
 
-phase1.write -> master_doc: "creates"
-
-# --- Artifacts (central) ---
+# --- Artifacts ---
 
 master_doc: "Master Doc" {
   shape: page
   style.fill: "#fffde7"
   style.stroke: "#f9a825"
-  style.font-size: 16
-
-  vision: "Vision & Principles"
-  state: "Starting State"
-  history: "Previous Sessions\n(date, commits, reviewed)"
+  label: |md
+    **Master Doc**
+    - Vision & Principles
+    - Design Spec (when needed)
+    - Starting State
+    - Previous Sessions
+  |
 }
 
-session_plan: "Session Plan" {
-  shape: page
-  style.fill: "#fffde7"
+phase1.write -> master_doc: "creates" {
   style.stroke: "#f9a825"
-  style.font-size: 16
-
-  content: "Scope, Approach,\nVerification Criteria"
-  checklist: "Post-execution Checklist\n1. Cross-session review [subagent]\n2. Code review check (every 3)\n3. Bookkeeping [subagent]\n4. Handoff"
+  style.stroke-dash: 3
 }
 
 # --- Phase 2 (session loop) ---
@@ -67,16 +62,16 @@ phase2: "Phase 2: Session Loop" {
   }
   propose: "3. Propose\nhighest-leverage step"
   execute: "4. Execute & verify"
-
-  post_exec: "5. Post-Execution\n(follow session plan checklist)" {
+  post_exec: "5. Post-Execution" {
     style.fill: "#e8f0fd"
-    cross_review: "Cross-session\nreview [subagent]"
-    code_review: "Code review?\n(every 3 sessions)" { shape: diamond; style.fill: "#fff3cd" }
-    bookkeep: "Bookkeeping\n[subagent]"
-    handoff: "Handoff"
-    cross_review -> code_review
-    code_review -> bookkeep
-    bookkeep -> handoff
+    label: |md
+      **5. Post-Execution**
+      - Consistency check
+      - Code review
+      - Bookkeeping
+      - Doc coherence (every 5 sessions)
+      - Handoff
+    |
   }
 
   assess -> converge
@@ -85,13 +80,29 @@ phase2: "Phase 2: Session Loop" {
   execute -> post_exec
 }
 
-has_path -> phase2.assess: "path provided"
+route -> phase2.assess: "yes"
 
-# --- Reads/writes ---
+# --- Artifact connections ---
 
 phase2.assess -> master_doc: "reads" {
   style.stroke: "#f9a825"
   style.stroke-dash: 3
+}
+
+phase2.post_exec -> master_doc: "updates" {
+  style.stroke: "#f9a825"
+}
+
+session_plan: "Session Plan" {
+  shape: page
+  style.fill: "#fffde7"
+  style.stroke: "#f9a825"
+  label: |md
+    **Session Plan**
+    - Scope & Approach
+    - Verification Criteria
+    - Post-execution Checklist
+  |
 }
 
 phase2.execute -> session_plan: "creates" {
@@ -99,26 +110,17 @@ phase2.execute -> session_plan: "creates" {
   style.stroke-dash: 3
 }
 
-phase2.post_exec -> session_plan.checklist: "follows" {
-  style.stroke: "#f9a825"
-  style.stroke-dash: 3
-}
-
-phase2.post_exec.bookkeep -> master_doc.history: "updates" {
-  style.stroke: "#f9a825"
-}
-
-# --- Loop back ---
-
-phase2.post_exec.handoff -> phase2.assess: "next session:\n/clear + /master-plan <path>" {
-  style.stroke-dash: 3
-}
-
 # --- Convergence exit ---
 
-done: "Done\nFinal code review [subagent],\ndoc cleanup, squash" {
+done: "Done" {
   shape: oval
   style.fill: "#d4edda"
 }
 
 phase2.converge -> done: "vision met"
+
+# --- Loop back ---
+
+phase2.post_exec -> phase2.assess: "/clear + next session" {
+  style.stroke-dash: 3
+}
