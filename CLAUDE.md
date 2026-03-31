@@ -12,6 +12,14 @@ When modifying the skill, always:
 
 Step 3 is required because `plugin update` checks the cached marketplace, not the remote. Without it, the update command will report "already at latest."
 
+## Versioning
+
+Semantic versioning for `.claude-plugin/plugin.json`:
+
+- **MAJOR** (X.0.0): breaking changes to master doc format or session plan structure (would break existing master plans)
+- **MINOR** (0.X.0): new features or flow changes (new steps, new execution paths)
+- **PATCH** (0.0.X): bug fixes, wording clarifications, diagram updates
+
 ## Design principle: no loose steps
 
 Every action the skill expects to happen must be owned by a plan file. If a step exists only as "the orchestrator will do it" without being written into a plan's sequence, it will get skipped. When adding new flows or modifying existing ones:
@@ -23,4 +31,7 @@ Every action the skill expects to happen must be owned by a plan file. If a step
 
 ## D2 diagrams
 
-When modifying `.d2` files, always re-render the corresponding `.svg` by running `d2 <source>.d2 <output>.svg`. Never commit a changed `.d2` without updating its `.svg`.
+- When modifying the flow in `SKILL.md`, always update `docs/master-plan-flow.d2` to match. The diagram must stay aligned with the skill definition.
+- Keep the diagram vertical (`direction: down`) for readability in GitHub.
+- If the diagram gets complex, simplify — but preserve the essential flow and key steps so a reader can understand what the master plan does at a glance.
+- When modifying `.d2` files, always re-render the corresponding `.svg` by running `d2 <source>.d2 <output>.svg`. Never commit a changed `.d2` without updating its `.svg`.
