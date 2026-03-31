@@ -20,3 +20,7 @@ Every action the skill expects to happen must be owned by a plan file. If a step
 - If the main conversation (orchestrator) executes it, it must be a named section in the session plan
 - If a subagent executes it, it must be in the agent's prompt (which comes from a plan section)
 - Post-agent steps (merge, combined verification, conflict resolution) are especially easy to leave unowned -- always check these
+
+## D2 diagrams
+
+When modifying `.d2` files, always re-render the corresponding `.svg` by running `d2 <source>.d2 <output>.svg`. Never commit a changed `.d2` without updating its `.svg`.

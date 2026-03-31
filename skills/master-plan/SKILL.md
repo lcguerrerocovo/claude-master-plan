@@ -84,10 +84,25 @@ This is the core loop. Every continuation session follows these steps.
 
 If the remaining gap is small or remaining work is diminishing returns:
 - Proactively recommend stopping
-- **Final code review:** Use the `Agent` tool to dispatch a subagent to review the full accumulated diff before closing out.
-- Guide final documentation cleanup if the user agrees
-- **Review commit history:** Gather all commits across sessions (from "Previous sessions" entries). Present the full list and ask the user if they want to squash or simplify the history before considering the work done.
-- The post-execution checklist still runs after this -- bookkeeping records the final session, then handoff tells the user the work is complete instead of suggesting another session.
+- If the user agrees, run the **convergence checklist** (replaces the normal post-execution checklist for this session):
+
+  1. **CODE REVIEW (if needed)** -- check the "Previous sessions" entries
+     to find the last session that included a code review. If there are
+     unreviewed sessions since then, dispatch a subagent to review the
+     accumulated diff from those sessions. Fix any issues found and
+     commit the fixes. Skip if the previous session already ran a review.
+  2. **COMMIT HISTORY REWRITE** -- reorganize all commits across all
+     sessions into a logical narrative that tells the story of what
+     was built and why. Do not squash — restructure into coherent,
+     well-ordered steps. Must run before bookkeeping so the final
+     session entry records post-rewrite hashes.
+  3. **BOOKKEEPING** -- dispatch a subagent to update the master doc:
+     mark the master plan as **closed/complete** in the session entry.
+     Use the post-rewrite commit hashes from step 2. If code review
+     (step 1) produced fixes, include those commit hashes too.
+  4. **MASTER DOC COHERENCE** -- same as normal post-execution step 5
+     (runs unconditionally here, not just every 5 sessions).
+  5. **HANDOFF** -- tell user: "Master plan complete."
 
 Do NOT push to continue when the vision is substantially met.
 
@@ -152,7 +167,10 @@ Do NOT push to continue when the vision is substantially met.
         - Find the session plan: run `ls -t ~/.claude/plans/ | head -5`,
           confirm with the user
         - Read the master doc at <MASTER_DOC_PATH> and the session plan
-        - Use the commit hash(es) from steps 2-3
+        - For sequential sessions: use the commit hash(es) from steps 2-3
+        - For parallel sessions: the orchestrator must pass the agent
+          commit hashes (collected during merge) into the subagent prompt,
+          plus any post-merge commits from steps 2-3
         - Collect outcomes from steps 1 and 3 above
         - Add session to "Previous sessions" with: date, topic, summary,
           plan path (actual file, never "inline"), commits, what was
@@ -167,11 +185,11 @@ Do NOT push to continue when the vision is substantially met.
      5. MASTER DOC COHERENCE (every 5 sessions) -- if this is session 5,
         10, 15, etc., dispatch a subagent to review the master doc for:
         - Resolved design questions that should be collapsed or archived
-        - Session summaries that can be condensed (keep date, topic,
-          commits; trim verbose detail)
         - Sections that contradict each other or have drifted from the
           vision
         - Design artifacts that no longer reflect reality
+        - Do NOT merge or remove session entries -- each session stays
+          as its own record
         Present proposed edits for user approval before applying.
 
      6. HANDOFF -- tell user: "Master doc updated. Run /clear and then
@@ -209,6 +227,7 @@ If the user chose parallel execution in Step 3, replace the normal execute flow 
    - If a merge produces conflicts, present them to the user for resolution
    - Failed tracks are reported but not merged
    - After all passing tracks are merged, run combined verification on the merged result
+   - **If combined verification fails:** present the failures to the user with context on which tracks likely caused the issue. Offer two options: (a) revert the merges and re-run failing tracks with fixes, or (b) fix forward in the current branch. User chooses.
 
 Session plans are lightweight. If a session's scope is genuinely complex, suggest using the writing-plans skill as an exception.
 

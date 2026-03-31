@@ -76,8 +76,8 @@ phase2: "Phase 2: Session Loop" {
     label: |md
       **5. Post-Execution**
       - Consistency check
-      - Code review (every 5)
       - **Commit**
+      - Code review (every 5)
       - Bookkeeping
       - Doc coherence (every 5)
       - Handoff
@@ -136,7 +136,20 @@ done: "Done" {
   style.fill: "#d4edda"
 }
 
-phase2.converge -> done: "vision met"
+converge_checklist: "Convergence Checklist" {
+  style.fill: "#e8f0fd"
+  label: |md
+    **Convergence Checklist**
+    - Code review (if unreviewed)
+    - Commit history rewrite
+    - Bookkeeping (mark closed)
+    - Doc coherence
+    - Handoff: "complete"
+  |
+}
+
+phase2.converge -> converge_checklist: "vision met"
+converge_checklist -> done
 
 # --- Loop back ---
 
