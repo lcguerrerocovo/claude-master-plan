@@ -133,20 +133,27 @@ Do NOT push to continue when the vision is substantially met.
         - Fix any issues found
         - Report: list what was checked and what was fixed (or "clean")
 
-     2. CODE REVIEW (every 5 sessions) -- if this is session 5, 10, 15,
+     2. COMMIT -- stage all session changes and create a commit:
+        - Run `git diff --stat` to review what changed
+        - Stage all relevant changes (implementation + consistency fixes
+          from step 1)
+        - Create a commit with a message summarizing the session's work
+        - Record the commit hash(es) for the bookkeeping step
+
+     3. CODE REVIEW (every 5 sessions) -- if this is session 5, 10, 15,
         etc., dispatch a subagent to:
         - Review the accumulated diff since the last code review
           (all commits from the last 5 sessions)
         - Check for correctness, safety, adherence to principles
-        - Fix any issues found
+        - Fix any issues found and commit the fixes
         - Report: list findings and fixes (or "clean")
 
-     3. BOOKKEEPING -- dispatch a subagent to:
+     4. BOOKKEEPING -- dispatch a subagent to:
         - Find the session plan: run `ls -t ~/.claude/plans/ | head -5`,
           confirm with the user
         - Read the master doc at <MASTER_DOC_PATH> and the session plan
-        - Run `git log --oneline` to identify commits from this session
-        - Collect outcomes from steps 1-2 above
+        - Use the commit hash(es) from steps 2-3
+        - Collect outcomes from steps 1 and 3 above
         - Add session to "Previous sessions" with: date, topic, summary,
           plan path (actual file, never "inline"), commits, what was
           verified, consistency findings, review findings
@@ -157,7 +164,7 @@ Do NOT push to continue when the vision is substantially met.
              - Track B: [summary]. Commits: `def`. Verification: pass.
           Verified: [combined]. Consistency: [findings]. Review: [findings].
 
-     4. MASTER DOC COHERENCE (every 5 sessions) -- if this is session 5,
+     5. MASTER DOC COHERENCE (every 5 sessions) -- if this is session 5,
         10, 15, etc., dispatch a subagent to review the master doc for:
         - Resolved design questions that should be collapsed or archived
         - Session summaries that can be condensed (keep date, topic,
@@ -167,7 +174,7 @@ Do NOT push to continue when the vision is substantially met.
         - Design artifacts that no longer reflect reality
         Present proposed edits for user approval before applying.
 
-     5. HANDOFF -- tell user: "Master doc updated. Run /clear and then
+     6. HANDOFF -- tell user: "Master doc updated. Run /clear and then
         /master-plan <MASTER_DOC_PATH> to start the next session."
      ```
 2. Execute the work
