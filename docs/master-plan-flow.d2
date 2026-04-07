@@ -71,6 +71,11 @@ phase2: "Phase 2: Session Loop" {
   }
   merge: "Merge & verify"
 
+  ctx_check: "Context check" {
+    shape: diamond
+    style.fill: "#fff3cd"
+  }
+
   post_exec: "5. Post-Execution" {
     style.fill: "#e8f0fd"
     label: |md
@@ -87,8 +92,10 @@ phase2: "Phase 2: Session Loop" {
   assess -> converge
   converge -> propose: "gap remains"
   propose -> parallel
-  parallel -> seq_exec: "no"
-  parallel -> par_exec: "yes"
+  parallel -> ctx_check: "no"
+  parallel -> ctx_check: "yes"
+  ctx_check -> seq_exec: "ok (sequential)"
+  ctx_check -> par_exec: "ok (parallel)"
   seq_exec -> post_exec
   par_exec -> merge
   merge -> post_exec
@@ -150,6 +157,13 @@ converge_checklist: "Convergence Checklist" {
 
 phase2.converge -> converge_checklist: "vision met"
 converge_checklist -> done
+
+# --- Context check: too high -> recommend /clear ---
+
+phase2.ctx_check -> phase2.assess: "> 75%: save checkpoint + /clear" {
+  style.stroke: "#e74c3c"
+  style.stroke-dash: 3
+}
 
 # --- Loop back ---
 

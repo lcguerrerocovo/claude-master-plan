@@ -1,12 +1,12 @@
 {
   "name": "master-plan",
-  "description": "Multi-session vision tracking and execution for large goals",
-  "version": "1.6.0",
+  "description": "Multi-session vision tracking and execution for large goals, with context bridging across /clear boundaries",
+  "version": "1.7.0",
   "author": {
     "name": "Luis Guerrero",
     "email": "lcguerrerocovo@gmail.com"
   },
   "repository": "https://github.com/lcguerrerocovo/claude-master-plan",
   "license": "MIT",
-  "keywords": ["skills", "master-plan", "multi-session", "planning", "vision", "execution"]
+  "keywords": ["skills", "master-plan", "multi-session", "planning", "vision", "execution", "bridge", "context"]
 }

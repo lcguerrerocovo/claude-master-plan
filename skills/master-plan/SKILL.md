@@ -67,6 +67,23 @@ Static snapshot -- not a task list, no strikethrough tracking.]
 
 ---
 
+## Context Budget (optional)
+
+The skill can monitor context window usage to avoid auto-compaction mid-work. This requires the user's status line command to write context stats to `/tmp/claude-context-window.json`. If the file doesn't exist, the skill falls back to asking the user.
+
+**How to check:** Read `/tmp/claude-context-window.json`. If the file exists, extract `used_percentage`. If it doesn't exist, ask the user: "What's your context usage at? (check your status bar)"
+
+**Thresholds:**
+- **< 60%** -- safe to continue
+- **60–75%** -- warn: "Context is at N%. This execution cycle should be the last before /clear."
+- **> 75%** -- recommend checkpoint: "Context is at N%. Recommend saving a checkpoint and doing /clear before starting more work."
+
+**When to check:**
+- Before Step 4 (Execute) -- if above 75%, recommend /clear instead of executing
+- At the HANDOFF decision point -- inform the "continue vs /clear" recommendation
+
+---
+
 ## Phase 2: Execute (Each Session)
 
 This is the core loop. Every continuation session follows these steps.
@@ -132,6 +149,8 @@ Do NOT push to continue when the vision is substantially met.
 
 **Do NOT invoke `superpowers:brainstorming` or `superpowers:writing-plans` during this step.** Master-plan owns its own planning process. Always use `EnterPlanMode` directly.
 
+0. **Context check** -- before starting execution, check the context budget (see "Context Budget" section). If above 75%, recommend the user do `/clear` and restart with `/master-plan <path>` instead of executing. If 60–75%, warn that this should be the last cycle. Proceed only if the user confirms.
+
 1. Use `EnterPlanMode` to create the session plan with these sections:
    - **Scope:** what this session will accomplish
    - **Approach:** how the work will be done
@@ -194,6 +213,8 @@ Do NOT push to continue when the vision is substantially met.
 
      6. HANDOFF -- tell user: "Master doc updated. Run /clear and then
         /master-plan <MASTER_DOC_PATH> to start the next session."
+        If context budget is available and above 60%, also mention:
+        "Context is at N% -- good time to /clear."
      ```
 2. Execute the work
 3. Verify against the criteria from the plan
