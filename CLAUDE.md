@@ -6,11 +6,12 @@ When modifying the skill, always:
 
 1. **Bump version** in `.claude-plugin/plugin.json` before committing
 2. **Commit and push** to master
-3. **Refresh the marketplace cache** -- `claude plugin marketplace update claude-master-plan`
-4. **Update the plugin** -- `claude plugin update -s user master-plan@claude-master-plan`
-5. **Restart Claude Code** to apply
+3. **Nuke the plugin cache** -- `rm -rf ~/.claude/plugins/cache/claude-master-plan/`
+4. **Refresh the marketplace cache** -- `claude plugin marketplace update claude-master-plan`
+5. **Reinstall the plugin** -- `claude plugin uninstall -s user master-plan@claude-master-plan && claude plugin install -s user master-plan@claude-master-plan`
+6. **Restart Claude Code** to apply
 
-Step 3 is required because `plugin update` checks the cached marketplace, not the remote. Without it, the update command will report "already at latest."
+Steps 3-5 are needed because `plugin update` often reports "already at latest" without actually refreshing the cache directory. Nuking the cache and reinstalling forces a clean pull.
 
 ## Versioning
 
