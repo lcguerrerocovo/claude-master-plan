@@ -1,0 +1,4 @@
+interface:
+  display_name: Master Plan
+  short_description: Continue a multi-session master plan on Codex.
+  default_prompt: "$master-plan continue /path/to/master.md"

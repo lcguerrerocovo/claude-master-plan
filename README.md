@@ -18,6 +18,13 @@ Master Plan gives Claude Code a structured workflow for goals that span multiple
 - **Master doc coherence reviews**: Every 5 sessions, condenses verbose history and flags contradictions
 - **Domain-agnostic**: Works for code, docs, prompts, processes -- anything
 
+## Runtimes
+
+- **Claude Code (primary).** Full workflow: brainstorming to create a plan, parallel tracks, subagent-dispatched bookkeeping, automated consistency/review/coherence cadences, bridge for context handoff across `/clear`. Install instructions below.
+- **Codex (secondary, v1).** Linear-loop subset for continuing an existing plan. See [`codex/README.md`](codex/README.md) for install and the full subset list.
+
+Both runtimes produce master docs in the same format — a plan started in one can be continued in the other.
+
 ## Install
 
 ```bash
