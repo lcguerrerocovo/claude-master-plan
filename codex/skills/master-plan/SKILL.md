@@ -28,13 +28,95 @@ Each subset is an explicit degradation under the master-plan principle *"Adapter
 
 ## Storage
 
-- **Master docs** live at the location named in the project's `CLAUDE.md` (or `AGENTS.md`) under a `Master plans directory` entry, or `docs/master-plans/` if no such entry exists. This location is shared across runtimes — do not move it.
-- **Session plans** (scratch written during Step 3) live at `~/.codex/plans/YYYY-MM-DD-topic.md`. Create the directory if missing. This is runtime-local scratch; other runtimes will not read it.
+- **Master docs** live at the location named in the project's `CLAUDE.md` (or `AGENTS.md`) under a `Master plans directory` entry, or `docs/master-plans/` if no such entry exists. This location is shared across runtimes — do not move it. Preflight Check 2 (below) resolves this on every invocation.
+- **Session plans** (scratch written during Step 3) live at `~/.codex/plans/YYYY-MM-DD-topic.md`. Create the directory if missing. This is runtime-local scratch; other runtimes will not read it. Preflight Check 1 (below) probes this before Phase 2; if Codex's sandbox blocks the write, a fix menu is shown.
+
+## Preflight
+
+Run once per conversation before routing to Phase 2. If preflight already completed successfully earlier in this conversation, skip it. If any check fails, **stop** and present the menu below verbatim; wait for the user's reply before continuing.
+
+### Check 1 — Session-plan storage writable
+
+Probe:
+
+```bash
+mkdir -p ~/.codex/plans && touch ~/.codex/plans/.probe && rm ~/.codex/plans/.probe && echo OK
+```
+
+If the probe fails, Codex's `workspace-write` sandbox is blocking writes to `~/.codex/plans/`. Present this menu verbatim:
+
+> The skill writes session plan files to `~/.codex/plans/`, but your Codex sandbox is blocking it. Pick a fix:
+>
+> 1. **Auto-patch `~/.codex/config.toml`** — add `~/.codex/plans` to `writable_roots` and `mkdir -p` the directory. You'll need to restart the Codex session for the config change to take effect, then re-invoke the skill.
+> 2. **Show me the manual fix** — print the two-line change and exit without touching anything.
+> 3. **Use in-workspace scratch for this session** — write the plan file to `./.codex-plans/` under the current workspace instead (adds `.codex-plans/` to `.gitignore` if missing).
+>
+> Reply with 1, 2, or 3.
+
+Dispatch:
+
+- **1 (auto-patch).** Resolve `~/.codex/config.toml`. If it's a symlink, edit the symlink *target* (the dotfiles source of truth — do not edit the symlinked destination). If a `[sandbox_workspace_write]` section exists, append `~/.codex/plans` to its `writable_roots` array if not already present; otherwise add the section:
+
+  ```toml
+  [sandbox_workspace_write]
+  writable_roots = ["<absolute-home>/.codex/plans"]
+  ```
+
+  Then `mkdir -p ~/.codex/plans`. Tell the user: "Config patched. Restart Codex and re-invoke the skill — the sandbox change only takes effect on a fresh session." Exit.
+
+- **2 (manual).** Print the `[sandbox_workspace_write]` block above plus the `mkdir -p ~/.codex/plans` command, note that Codex must be restarted after, and exit.
+
+- **3 (in-workspace scratch).** Set the session-plan directory to `./.codex-plans/` for this run only. `mkdir -p ./.codex-plans`. If `.gitignore` exists and does not already list `.codex-plans/`, append it. Record the chosen path in the Step-3 plan file so the session entry's `Plan:` field (Schema 2) records the actual path used.
+
+### Check 2 — Master plans directory resolvable
+
+If the user's invocation already names an explicit master-doc path (e.g. "continue master plan at `/path/to/master.md`"), skip this check.
+
+Otherwise, search for a `Master plans directory` entry in this order:
+
+1. `./CLAUDE.md` in the workspace
+2. `./AGENTS.md` in the workspace
+3. `~/.codex/AGENTS.md` (or its symlink target in dotfiles)
+
+As an implicit fallback, accept `docs/master-plans/` in the workspace if that directory already exists.
+
+If nothing is usable, present this menu verbatim:
+
+> No `Master plans directory` is configured and no `docs/master-plans/` exists in the current workspace. Where should I look for master docs?
+>
+> 1. `~/dotfiles/master-plans/` (runtime-neutral dotfiles path — recommended for cross-runtime use)
+> 2. `~/dotfiles/claude/master-plans/` (legacy Claude-prefixed path — if your dotfiles still use this name)
+> 3. `docs/master-plans/` in the current project (I'll create it)
+> 4. Other — give me a path
+> 5. Stop — I'll add a `Master plans directory` entry to CLAUDE.md / AGENTS.md myself first
+>
+> Reply with 1-5.
+
+- **1-4.** Use the chosen path for this session. Then ask the persistence follow-up:
+
+  > Persist this choice? I can add `- **Master plans directory:** <path>` to:
+  >
+  > a. `./CLAUDE.md`
+  > b. `./AGENTS.md`
+  > c. `~/.codex/AGENTS.md` (global for all Codex sessions)
+  > d. Don't persist — this session only
+  >
+  > Reply with a-d.
+
+  Apply the edit if the user picks a-c; skip if d.
+
+- **5.** Print the entry shape (`- **Master plans directory:** /absolute/path/`) and exit.
+
+### Preflight summary
+
+If both checks pass, proceed silently to Routing. If a check ended in "continue with a workaround" (e.g., Check 1 option 3's in-workspace scratch), carry that configuration into Phase 2 — the Step-3 plan file must record the actual session-plan directory used so the session entry's `Plan:` field is accurate per Schema 2.
 
 ## Routing
 
+Runs after Preflight.
+
 - **Master-doc path provided** (e.g. the user says "continue master plan at `…md`") → go straight to Phase 2.
-- **No path provided** → list master-doc filenames under the configured directory, ask which to resume. Do not offer to start a new one; that's out of scope.
+- **No path provided** → list master-doc filenames under the master-plans directory resolved in Preflight Check 2, ask which to resume. Do not offer to start a new one; that's out of scope.
 
 ## Phase 2: Execute
 
