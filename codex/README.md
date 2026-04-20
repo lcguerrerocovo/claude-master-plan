@@ -41,12 +41,13 @@ The master doc location is read from a `Master plans directory` entry in the pro
 
 ### First run — preflight
 
-On the first invocation in a conversation, the skill runs a short preflight that checks two things:
+On the first invocation in a conversation, the skill runs a short preflight that checks three things:
 
 1. **`~/.codex/plans/` is writable under your Codex sandbox.** Codex's default `workspace-write` sandbox mode blocks writes outside the active workspace, so this typically fails until you add `~/.codex/plans` to `writable_roots` in `~/.codex/config.toml`. The skill offers to auto-patch the config, show you the manual fix, or fall back to an in-workspace scratch directory.
 2. **A master-plans directory is resolvable.** If you didn't pass an explicit path and no `Master plans directory` entry is configured, the skill shows a menu with dotfiles-style and in-repo options and offers to persist your choice into CLAUDE.md / AGENTS.md.
+3. **`.git/` is writable for the post-execution COMMIT step.** Even inside the workspace, `workspace-write` typically excludes VCS metadata (and on some Codex builds this exclusion is enforced independently of `writable_roots`), which breaks the inline commit. The skill offers to auto-patch `writable_roots`, show you the manual fix, or skip the commit for this session and record `Commits: none (sandbox blocked .git writes; uncommitted changes at <paths>)` in the session entry. (Skipped only if the workspace is a git repo — non-repo sessions are recorded as `Commits: none (not a git repo)` directly at commit time.)
 
-Preflight only runs once per conversation — once both checks pass, subsequent invocations skip it. The full check + menu spec lives in `codex/skills/master-plan/SKILL.md` under `## Preflight`.
+Preflight only runs once per conversation — once all three checks pass, subsequent invocations skip it. The full check + menu spec lives in `codex/skills/master-plan/SKILL.md` under `## Preflight`.
 
 ## What's subset vs. the Claude version
 

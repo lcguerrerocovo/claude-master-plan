@@ -107,9 +107,44 @@ If nothing is usable, present this menu verbatim:
 
 - **5.** Print the entry shape (`- **Master plans directory:** /absolute/path/`) and exit.
 
+### Check 3 — Git commit writable
+
+Only relevant if the workspace is a git repo. Probe:
+
+```bash
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 && \
+  touch .git/.probe 2>/dev/null && rm .git/.probe && echo OK
+```
+
+- If `git rev-parse` fails, the workspace is not a git repo. Skip this check; Step 5 (Post-execution) step 2 (COMMIT) will record `Commits: none (not a git repo)` when it runs.
+- If `git rev-parse` succeeds but the `touch` fails, Codex's sandbox is blocking writes to `.git/`. Even in `workspace-write` mode, Codex typically excludes VCS metadata by default — `writable_roots` entries may or may not override this depending on the Codex build. Present this menu verbatim:
+
+> The skill's post-execution COMMIT step needs to write to `.git/`, but your Codex sandbox is blocking it. Pick a fix:
+>
+> 1. **Auto-patch `~/.codex/config.toml`** — add the workspace's absolute `.git/` path to `writable_roots`. You'll need to restart the Codex session for the change to take effect, then re-invoke the skill. Note: some Codex builds enforce the `.git/` exclusion independently of `writable_roots`; if restart doesn't clear the block, re-run and pick option 2 or 3.
+> 2. **Show me the manual fix** — print the config snippet and a pointer to the Codex sandbox docs, then exit so you can investigate the right setting for your build (e.g. a `vcs_writes` flag, a different `sandbox_mode`, or a build-specific override).
+> 3. **Skip commit for this session** — proceed to Phase 2. Step 5 (Post-execution) step 2 (COMMIT) will record `Commits: none (sandbox blocked .git writes; uncommitted changes at <paths>)` in the session entry per Schema 2 and Principle 3 ("adapters may degrade"). Changes stay uncommitted; commit manually from a shell afterwards if you want them recorded.
+>
+> Reply with 1, 2, or 3.
+
+Dispatch:
+
+- **1 (auto-patch).** Resolve `~/.codex/config.toml` (edit the symlink target if it's a symlink). If a `[sandbox_workspace_write]` section exists, append the workspace's absolute `.git/` path (e.g. `/abs/path/to/workspace/.git`) to its `writable_roots` array if not already present; otherwise add the section:
+
+  ```toml
+  [sandbox_workspace_write]
+  writable_roots = ["<absolute-workspace>/.git"]
+  ```
+
+  Tell the user: "Config patched. Restart Codex and re-invoke the skill. If `.git/` writes are still blocked after restart, re-run and pick option 2 or 3 — some Codex builds enforce the exclusion independently of `writable_roots`." Exit.
+
+- **2 (manual).** Print the `[sandbox_workspace_write]` snippet above, note that `writable_roots` may not be sufficient on all Codex builds, and suggest consulting `codex --help` and the Codex sandbox documentation for the authoritative setting. Exit.
+
+- **3 (skip commit).** Record a session flag marking commits as skipped, and carry it into Phase 2. Step 5 (Post-execution) step 2 (COMMIT) honors the flag by running `git diff --stat` (read-only) to list uncommitted changes and recording `Commits: none (sandbox blocked .git writes; uncommitted changes at <paths>)` in the bookkeeping entry. Proceed to Routing.
+
 ### Preflight summary
 
-If both checks pass, proceed silently to Routing. If a check ended in "continue with a workaround" (e.g., Check 1 option 3's in-workspace scratch), carry that configuration into Phase 2 — the Step-3 plan file must record the actual session-plan directory used so the session entry's `Plan:` field is accurate per Schema 2.
+If all three checks pass, proceed silently to Routing. If a check ended in "continue with a workaround" (Check 1 option 3's in-workspace scratch, or Check 3 option 3's skip-commit), carry that configuration into Phase 2 — the Step-3 plan file must record the actual session-plan directory used and Step 5 must honor the skip-commit flag so the session entry's `Plan:` and `Commits:` fields are accurate per Schema 2.
 
 ## Routing
 
@@ -165,10 +200,16 @@ After implementation and verification, complete ALL of these steps:
    - Record: what was checked and what was fixed (or "clean") — used in the session entry below.
 
 2. COMMIT — stage all session changes and create a commit:
-   - Run `git diff --stat` to review what changed.
-   - Stage the relevant changes (implementation + consistency fixes from step 1).
-   - Create a commit summarizing the session's work.
-   - Record the commit hash(es) for the bookkeeping step.
+   - If Preflight Check 3 set the skip-commit flag (sandbox blocked `.git/` writes), take the skip branch (this is an explicit Principle-3 degradation, not a silent skip):
+     - Run `git diff --stat` (read-only) to list uncommitted changes.
+     - Do NOT run `git add` or `git commit` — they will fail under the sandbox.
+     - Record the bookkeeping entry's `Commits:` field as `none (sandbox blocked .git writes; uncommitted changes at <paths>)`, where `<paths>` is a compact representation of the `git diff --stat` result. Continue to step 3.
+   - If the workspace is not a git repo: skip staging/committing. Record `Commits: none (not a git repo)` for the bookkeeping entry. Continue to step 3.
+   - Otherwise (the normal path):
+     - Run `git diff --stat` to review what changed.
+     - Stage the relevant changes (implementation + consistency fixes from step 1).
+     - Create a commit summarizing the session's work.
+     - Record the commit hash(es) for the bookkeeping step.
 
 3. BOOKKEEPING — edit the master doc at <MASTER_DOC_PATH> directly:
    - Read the master doc.
