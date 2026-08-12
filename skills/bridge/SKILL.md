@@ -13,9 +13,9 @@ multiple clears stays traceable.
 
 ## Arguments
 
-- `/bridge` -- no args: check for an existing active bridge. If found, restore it. If not found, save one.
-- `/bridge save` -- explicitly save a bridge (create/overwrite the active one)
-- `/bridge restore` -- explicitly restore and archive the active bridge
+- No args: check for an existing active bridge. If found, restore it. If not found, save one.
+- `save` -- explicitly save a bridge (create/overwrite the active one)
+- `restore` -- explicitly restore and archive the active bridge
 
 ## Storage
 
@@ -26,18 +26,20 @@ multiple clears stays traceable.
 
 ## Save Flow
 
-When the user invokes `/bridge` or `/bridge save`:
+When the user invokes the bridge skill to save:
 
 ### 1. Locate the current transcript
 
-The main conversation finds the raw session log:
+Find the raw session log for the current working directory. Session
+transcripts are stored as `.jsonl` files in a harness-specific directory:
 
-```bash
-ls -t "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects/"*/*.jsonl 2>/dev/null | head -20
-```
+- **snipe:** `~/.snipe/sessions/<slug>--/<uuid>.jsonl` where `<slug>` encodes
+  the working directory with `--` as path separators
+- **Claude Code:** `~/.claude/projects/<slug>/*.jsonl` where `<slug>` encodes
+  the working directory
 
-Pick the newest `.jsonl` whose parent directory slug matches the current
-working directory. That file is the current session's transcript.
+Find the newest `.jsonl` matching the current working directory across
+both locations.
 
 ### 2. Locate the predecessor (optional)
 
@@ -47,15 +49,15 @@ predecessor so the new bridge can build on it rather than repeating it.
 
 ### 3. Capture context-budget reading (optional)
 
-Read `/tmp/claude-context-window.json` if present and extract
-`used_percentage`. Pass this to the subagent so it lands in the bridge
-frontmatter. If the file does not exist, skip the field.
+Read `/tmp/claude-context-window.json` (Claude Code) or check the snipe
+status line if available. Pass this to the subagent so it lands in the
+bridge frontmatter. If no programmatic source is available, skip the field.
 
 ### 4. Dispatch the bridge-writing subagent
 
-Call `Agent` with `subagent_type: general-purpose`. The subagent runs in
-isolated context, so this is cheap for the main conversation and safe even
-when the main is near its context limit.
+Dispatch a subagent to write the bridge. The subagent runs in isolated
+context, so this is cheap for the main conversation and safe even when
+the main is near its context limit.
 
 Prompt template (adapt values into each slot before dispatching):
 
@@ -127,12 +129,12 @@ If an entry already exists, leave it alone.
 
 ### 6. Tell the user
 
-- If written: "Bridge saved (subagent wrote from raw transcript). Run `/clear` and start the next session with `/bridge` to restore."
+- If written: "Bridge saved (subagent wrote from raw transcript). Run `/clear` and start the next session by invoking the bridge skill to restore."
 - If skipped: relay the subagent's "nothing to bridge" message.
 
 ## Restore Flow
 
-When the user invokes `/bridge` or `/bridge restore` and an active bridge
+When the user invokes the bridge skill to restore and an active bridge
 exists:
 
 1. **Read** `<memory>/bridge.md`.
@@ -158,12 +160,12 @@ exists:
    Archives are not indexed.
 
 5. **Ask what to do next:**
-   - If a master plan path was in the bridge: "Continue with `/master-plan <path>`?"
+   - If a master plan path was in the bridge: "Continue by invoking the master-plan skill with the path?"
    - Otherwise: "What would you like to work on?"
 
 ## No-args Routing
 
-When invoked as just `/bridge`:
+When invoked with no arguments:
 - **Active bridge exists** -> restore flow
 - **No active bridge** -> save flow
 

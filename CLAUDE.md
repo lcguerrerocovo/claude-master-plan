@@ -10,8 +10,11 @@ When modifying the skill, always:
 4. **Refresh the marketplace cache** -- `claude plugin marketplace update claude-master-plan`
 5. **Reinstall the plugin** -- `claude plugin uninstall -s user master-plan@claude-master-plan && claude plugin install -s user master-plan@claude-master-plan`
 6. **Restart Claude Code** to apply
+7. **Update snipe** -- `snipe update` to pull the latest commit into `~/.snipe/git/`
 
 Steps 3-5 are needed because `plugin update` often reports "already at latest" without actually refreshing the cache directory. Nuking the cache and reinstalling forces a clean pull.
+
+For snipe, the package is cloned from the git source on install and updated via `snipe update`.
 
 ## Versioning
 

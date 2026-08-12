@@ -7,15 +7,15 @@ description: Use when the user has a large goal spanning multiple sessions, want
 
 ## Arguments
 
-- `/master-plan` -- no args: start a new goal (brainstorming) or list existing master plans to continue
-- `/master-plan <path/to/master.md>` -- continuation: read the doc and proceed to the next execution session
+- No args: start a new goal (brainstorming) or list existing master plans to continue
+- `<path/to/master.md>` -- continuation: read the doc and proceed to the next execution session
 
 ## Storage
 
 - Check `CLAUDE.md` for a **Master plans directory** entry -- use that path if present
 - If none found, default to `docs/master-plans/` relative to the project root
 - If the directory doesn't exist, create it on first use
-- Master docs live here; session plans are created via plan mode and persist to `~/.claude/plans/`
+- Master docs live here; session plans are created via plan mode and persist to the harness's plans directory (`~/.claude/plans/` in Claude Code, `~/.snipe/plans/` in snipe)
 
 ## Routing
 
@@ -35,7 +35,7 @@ Collaborative brainstorming to converge on a master doc. This is NOT the brainst
 3. **Suggest principles** based on the domain and the conversation so far
 4. **Be flexible on principles** -- they can evolve across sessions
 5. **Write the master doc** once aligned (use the template below)
-6. **Suggest clearing context** -- the brainstorming conversation is no longer needed. Tell the user: "Master doc saved. Run `/clear` and then `/master-plan <path>` to start the first execution session with fresh context."
+6. **Suggest clearing context** -- the brainstorming conversation is no longer needed. Tell the user: "Master doc saved. Run `/clear` and then invoke the master-plan skill with the path to start the first execution session with fresh context."
 
 <HARD-GATE>
 Do NOT write the master doc until you and the user are aligned on both the vision and principles. A vague vision derails everything.
@@ -69,9 +69,9 @@ Static snapshot -- not a task list, no strikethrough tracking.]
 
 ## Context Budget (optional)
 
-The skill can monitor context window usage to avoid auto-compaction mid-work. This requires the user's status line command to write context stats to `/tmp/claude-context-window.json`. If the file doesn't exist, the skill falls back to asking the user.
+The skill can monitor context window usage to avoid auto-compaction mid-work.
 
-**How to check:** Read `/tmp/claude-context-window.json`. If the file exists, extract `used_percentage`. If it doesn't exist, ask the user: "What's your context usage at? (check your status bar)"
+**How to check:** Read `/tmp/claude-context-window.json` (Claude Code) or check the snipe status line. If no programmatic source is available, ask the user: "What's your context usage at? (check your status bar)"
 
 **Thresholds:**
 - **< 60%** -- safe to continue
@@ -147,11 +147,11 @@ Do NOT push to continue when the vision is substantially met.
 
 ### Step 4: Execute
 
-**Do NOT invoke `superpowers:brainstorming` or `superpowers:writing-plans` during this step.** Master-plan owns its own planning process. Always use `EnterPlanMode` directly.
+Master-plan owns its own planning process. Do not delegate to external planning skills -- enter plan mode directly.
 
-0. **Context check** -- before starting execution, check the context budget (see "Context Budget" section). If above 75%, recommend the user do `/clear` and restart with `/master-plan <path>` instead of executing. If 60–75%, warn that this should be the last cycle. Proceed only if the user confirms.
+0. **Context check** -- before starting execution, check the context budget (see "Context Budget" section). If above 75%, recommend the user do `/clear` and restart with the master-plan skill and the path instead of executing. If 60–75%, warn that this should be the last cycle. Proceed only if the user confirms.
 
-1. Use `EnterPlanMode` to create the session plan with these sections:
+1. Enter plan mode to create the session plan with these sections:
    - **Scope:** what this session will accomplish
    - **Approach:** how the work will be done
    - **Verification criteria:** how to confirm the work is correct
@@ -183,8 +183,9 @@ Do NOT push to continue when the vision is substantially met.
         - Report: list findings and fixes (or "clean")
 
      4. BOOKKEEPING -- dispatch a subagent to:
-        - Find the session plan: run `ls -t ~/.claude/plans/ | head -5`,
-          confirm with the user
+        - Find the session plan: run `ls -t` on the harness's plans
+          directory (`~/.claude/plans/` or `~/.snipe/plans/`), confirm
+          with the user
         - Read the master doc at <MASTER_DOC_PATH> and the session plan
         - For sequential sessions: use the commit hash(es) from steps 2-3
         - For parallel sessions: the orchestrator must pass the agent
@@ -212,7 +213,7 @@ Do NOT push to continue when the vision is substantially met.
         Present proposed edits for user approval before applying.
 
      6. HANDOFF -- tell user: "Master doc updated. Run /clear and then
-        /master-plan <MASTER_DOC_PATH> to start the next session."
+        invoke the master-plan skill with <MASTER_DOC_PATH> to start the next session."
         If context budget is available and above 60%, also mention:
         "Context is at N% -- good time to /clear."
      ```
@@ -229,17 +230,11 @@ If the user chose parallel execution in Step 3, replace the normal execute flow 
    - **Merge sequence:** the order tracks merge in (plan order), conflict resolution policy, combined verification step
    - **Post-execution checklist:** same as normal (copy verbatim from template above)
 
-2. **Dispatch all tracks as parallel Agent calls in a single message:**
-   ```
-   Agent(
-     description: "Track A: ...",
-     prompt: "<track section from orchestrator plan>\n\nMaster doc: <path>\n\nVerify your work against the track criteria. Commit passing work.",
-     isolation: "worktree",
-     model: "opus",
-     mode: "bypassPermissions"
-   )
-   ```
-   Agents do NOT get separate plan files -- they receive their track section from the orchestrator plan.
+2. **Dispatch all tracks as parallel subagents in a single message.**
+   Each subagent receives its track section from the orchestrator plan
+   plus the master doc path. Use git worktree isolation if available.
+   Agents do NOT get separate plan files -- they receive their track
+   section from the orchestrator plan.
 
 3. **Collect results** from each agent: what was done, verification pass/fail, branch name, commits.
 
@@ -250,7 +245,7 @@ If the user chose parallel execution in Step 3, replace the normal execute flow 
    - After all passing tracks are merged, run combined verification on the merged result
    - **If combined verification fails:** present the failures to the user with context on which tracks likely caused the issue. Offer two options: (a) revert the merges and re-run failing tracks with fixes, or (b) fix forward in the current branch. User chooses.
 
-Session plans are lightweight. If a session's scope is genuinely complex, suggest using the writing-plans skill as an exception.
+Session plans are lightweight. If a session's scope is genuinely complex, consider a dedicated planning session before execution.
 
 ### Step 5: Post-Execution
 

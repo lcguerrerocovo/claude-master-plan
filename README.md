@@ -1,6 +1,6 @@
 # claude-master-plan
 
-A Claude Code plugin for tracking and executing large goals across multiple sessions.
+A skill package for tracking and executing large goals across multiple sessions. Works in Claude Code, snipe, and Codex.
 
 ## What it does
 
@@ -21,11 +21,14 @@ Master Plan gives Claude Code a structured workflow for goals that span multiple
 ## Runtimes
 
 - **Claude Code (primary).** Full workflow: brainstorming to create a plan, parallel tracks, subagent-dispatched bookkeeping, automated consistency/review/coherence cadences, bridge for context handoff across `/clear`. Install instructions below.
+- **snipe.** Full workflow via snipe's package system. Skills auto-discover from the `skills/` directory. Install via `packages` in `~/.snipe/settings.json` or `snipe install git:github.com/lcguerrerocovo/claude-master-plan`.
 - **Codex (secondary, v1).** Linear-loop subset for continuing an existing plan. See [`codex/README.md`](codex/README.md) for install and the full subset list.
 
-Both runtimes produce master docs in the same format — a plan started in one can be continued in the other.
+All runtimes produce master docs in the same format — a plan started in one can be continued in another.
 
 ## Install
+
+### Claude Code
 
 ```bash
 # Add the marketplace
@@ -35,11 +38,25 @@ claude plugin marketplace add lcguerrerocovo/claude-master-plan
 claude plugin install master-plan@claude-master-plan
 ```
 
+### snipe
+
+```bash
+# Install as a snipe package
+snipe install git:github.com/lcguerrerocovo/claude-master-plan
+```
+
+Or add to `~/.snipe/settings.json` `packages` array:
+```json
+"git:github.com/lcguerrerocovo/claude-master-plan"
+```
+
 ## Usage
 
+Invoke the master-plan skill in your harness (e.g. `/skill:master-plan` in snipe, `/master-plan` in Claude Code):
+
 ```
-/master-plan                     # Start a new goal or list existing ones
-/master-plan path/to/master.md   # Continue an existing goal
+master-plan                     # Start a new goal or list existing ones
+master-plan path/to/master.md   # Continue an existing goal
 ```
 
 ### Workflow
